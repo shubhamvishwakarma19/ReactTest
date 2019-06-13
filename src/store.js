@@ -45,7 +45,12 @@ class TodosContainer extends Container {
       }
     }
 
-    return defaultState
+    let defaultList={
+      list: defaultState.list,
+      tempList: defaultState.list
+    }
+
+    return defaultList
   }
 
   syncStorage () {
@@ -57,33 +62,54 @@ class TodosContainer extends Container {
   }
 
   getList () {
-    return this.state.list
+    return this.state
   }
 
-  toggleComplete = async id => {
-    const item = this.state.list.find(i => i.id === id)
-    const completed = !item.completed
-
-    // We're using await on setState here because this comes from unstated package, not React
-    // See: https://github.com/jamiebuilds/unstated#introducing-unstated
-    await this.setState(state => {
-      const list = state.list.map(item => {
-        if (item.id !== id) return item
-        return {
-          ...item,
-          completed
-        }
+  toggleComplete = async (id,catid) => {
+    if(catid==0){
+      const item = this.state.list.find(i => i.id === id)
+      const completed = !item.completed
+      await this.setState(state => {
+        const list = state.list.map(item => {
+          if (item.id !== id) return item
+          return {
+            ...item,
+            completed
+          }
+        })
+        const tempList = list
+        
+        return { list ,tempList}
       })
-      const tempList = list
-      
-      return { list ,tempList}
-    })
+
+    }else{
+
+      await this.setState(state => {
+        for(let item of state.category){
+          if(item.categoryid==catid){
+            const items =item.todoList.find(i => i.id === id)
+            if(items.completed){
+              items.completed =false
+            }else{
+              items.completed = true
+            }
+          }
+        }
+        const category = state.category;
+        const tempList = state.category;
+  
+      return { category, tempList };
+      })
+
+    }
 
     this.syncStorage()
   }
 
-  createTodo = async text => {
-    await this.setState(state => {
+
+  createTodo = async  ( text , id )=> {
+    if(id==0){
+      await this.setState(state => {
       const item = {
         completed: false,
         text,
@@ -96,34 +122,122 @@ class TodosContainer extends Container {
       return { list, tempList }
     })
 
+    }else{
+
+      await this.setState(state => {
+        for(let item of state.category){
+          if(item.categoryid==id){
+            const items = {
+              completed: false,
+              text,
+              id: item.todoList.length + 1
+            }
+            item.todoList.push(items)
+          }
+        }
+        const category = state.category;
+        const tempList = state.category;
+  
+      return { category, tempList };
+      })
+    }
+    
+
     this.syncStorage()
   }
   createFilterTodo = async filterBy => {
     let list=[];
     await this.setState(state => {
-
-      if(filterBy!=='all'){
-        for(let items of state.tempList){
-          if(filterBy==='complete'){
-            if(items.completed){
-              list.push(items)
-            }
-          }
-          if(filterBy==='active'){
-            if(!items.completed){
-              list.push(items)
-            }
+      if(!state.category){
+          if(filterBy!=='all'){
+            for(let items of state.tempList){
+              if(filterBy==='complete'){
+                if(items.completed){
+                  list.push(items)
+                }
+              }
+              if(filterBy==='active'){
+                if(!items.completed){
+                  list.push(items)
+                }
+              }
           }
           
-
+        }else{
+          list= state.tempList;
         }
+        return { list }
+
       }else{
-         list= state.tempList;
+          let category=[];
+          if(filterBy!=='all'){
+            for(let items of state.tempList){
+                let temp=[]
+                if(items.todoList){
+                    for(let item of items.todoList){
+                      if(filterBy==='complete'){
+                        if(item.completed){
+                          temp.push(item)
+                        }
+                      }
+                      if(filterBy==='active'){
+                        if(!item.completed){
+                          temp.push(item)
+                        }
+                      }
+                    }
+                }
+                category.push({category:items.category,todoList: temp});
+
+            }
+          }else{
+            category= state.tempList;
+          }
+
+          return { category }
+
+
+
       }
-      return { list }
+
+           
 
     })
   }
+
+ 
+   showNewInput = async status => {
+    await this.setState(addNewList => {
+      addNewList = status
+      return { addNewList}
+    })
+
+  }
+
+
+  createNewList = async text => {
+    await this.setState(state => {
+      let category=[];
+      if(state.category){
+          category=state.category;
+          category.push({category: text,categoryid:category.length+1 ,todoList:[]});
+
+      }else{
+          category.push({category: "",categoryid:1,todoList:state.list});
+          category.push({category: text,categoryid:2 ,todoList:[]});
+      }
+      const tempList = category;
+  
+      return { category, tempList }
+    })
+  
+    this.syncStorage()
+  }
+
+
 }
+
+
+
 
 export default TodosContainer

@@ -2,10 +2,10 @@ import React from 'react'
 
 import styled from 'styled-components'
 
-const AddTodo = ({ onAddTodo }) => {
+const AddTodo = ({ onAddTodo ,catId}) => {
   const handleKeyPress = e => {
     if (e.key === 'Enter') {
-      onAddTodo(e.target.value)
+      onAddTodo(e.target.value,catId)
     }
   }
 

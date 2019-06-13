@@ -26,6 +26,8 @@ const Button = styled.button`
   border-radius: 3px;
   margin-bottom:20px;
   margin-top:20px;
+  cursor: pointer;
+
 `;
 
 export default FilterTodo
